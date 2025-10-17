@@ -1,0 +1,38 @@
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    exclude:
+      - build-pipeline.yml
+      - relase-pipeline.yml
+
+variables:
+  vmImageName: 'ubuntu-latest'
+
+jobs:
+- job: Build
+  pool:
+    vmImage: $(vmImageName)
+  steps:
+    - script: |
+        echo 'compile application'
+      displayName: 'compile'
+
+    - script: |
+        echo 'do some unit test'
+      displayName: 'unit test'
+
+    - task: ArchiveFiles@2
+      inputs:
+        rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+        replaceExistingArchive: true
+
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+        ArtifactName: 'drop'
+        publishLocation: 'Container'
