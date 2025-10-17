@@ -1,0 +1,37 @@
+# Explicitly set none for repository trigger
+trigger:
+- none
+
+resources:
+  pipelines:
+    - pipeline: ci-pipeline   # Nombre lógico de este recurso
+      source: CI              # Nombre del pipeline que dispara este
+      trigger:
+        branches:
+          - main
+
+variables:
+  vmImageName: 'ubuntu-latest'
+
+jobs:
+- deployment: Deploy
+  displayName: Deploy
+  environment: dev
+  pool:
+    vmImage: $(vmImageName)
+  strategy:
+    runOnce:
+      deploy:
+        steps:
+          - download: ci-pipeline
+            artifact: drop
+
+          - task: ExtractFiles@1
+            inputs:
+              archiveFilePatterns: '$(PIPELINE.WORKSPACE)/ci-pipeline/drop/$(resources.pipeline.ci-pipeline.runID).zip'
+              destinationFolder: '$(Agent.BuildDirectory)'
+              cleanDestinationFolder: false
+
+          - script: |
+              cat $(Agent.BuildDirectory)/README.md
+            displayName: cat
